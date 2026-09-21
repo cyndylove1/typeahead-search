@@ -6,8 +6,8 @@ export async function fetchCountries(
   query: string,
   signal?: AbortSignal,
 ): Promise<Country[]> {
-  const trimmedQuery = query.trim();
-  if (!trimmedQuery) return [];
+  const normalizedQuery = query.trim().toLowerCase();
+  if (!normalizedQuery) return [];
 
   const url = "https://countriesnow.space/api/v0.1/countries";
 
@@ -30,24 +30,16 @@ export async function fetchCountries(
     throw new Error(json.msg || "Failed to load countries");
   }
 
-  const normalizedQuery = trimmedQuery.toLowerCase();
-
-  // Filter countries as the user types
+  // STRICT FILTERING: Only match countries that START directly with the typed search query
   const matchedCountries = json.data.filter((item) => {
     const countryName = item.country?.trim().toLowerCase() || "";
-
-    // Exact prefix match 
-    const startsWithCountry = countryName.startsWith(normalizedQuery);
-
-    // Word start match
-    const wordMatch = countryName
-      .split(/\s+/)
-      .some((word) => word.startsWith(normalizedQuery));
-
-    return startsWithCountry || wordMatch;
+    return countryName.startsWith(normalizedQuery);
   });
 
-  // Map the API output to match your UI's Country type format
+  // Sort alphabetically
+  matchedCountries.sort((a, b) => a.country.localeCompare(b.country));
+
+  // Map the API output
   return matchedCountries.map((item) => ({
     name: {
       common: item.country,
@@ -56,7 +48,6 @@ export async function fetchCountries(
     cca2: item.iso2 || "",
     capital: item.cities && item.cities.length > 0 ? [item.cities[0]] : [],
     flags: {
-      // SVG flag 
       svg: item.iso2
         ? `https://flagcdn.com/${item.iso2.toLowerCase()}.svg`
         : undefined,
