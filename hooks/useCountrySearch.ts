@@ -56,7 +56,7 @@ export async function fetchCountries(
     cca2: item.iso2 || "",
     capital: item.cities && item.cities.length > 0 ? [item.cities[0]] : [],
     flags: {
-      // Free SVG flag 
+      // SVG flag 
       svg: item.iso2
         ? `https://flagcdn.com/${item.iso2.toLowerCase()}.svg`
         : undefined,

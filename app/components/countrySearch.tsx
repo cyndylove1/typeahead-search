@@ -132,8 +132,6 @@ export default function CountrySearch() {
           onRetry={refetch}
         />
       )}
-
-      {/* {selectedCountry && <SelectedCountryCard country={selectedCountry} />} */}
     </div>
   );
 }
