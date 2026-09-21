@@ -14,8 +14,8 @@ export default function CountrySearch() {
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const isSelectingRef = useRef(false);
 
-  // Calls GET /countries/v5?q={inputValue} with debouncing
   const {
     data: countries = [],
     isLoading,
@@ -25,7 +25,7 @@ export default function CountrySearch() {
     refetch,
   } = useCountrySearch(inputValue);
 
-  // Close dropdown on outside click
+  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -39,12 +39,14 @@ export default function CountrySearch() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Reset keyboard
+  // Reset keyboard index when search results change
   useEffect(() => {
     setSelectedIndex(-1);
   }, [countries]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isSelectingRef.current) return;
+
     const val = e.target.value;
     setInputValue(val);
     setIsOpen(val.trim().length > 0);
@@ -52,10 +54,16 @@ export default function CountrySearch() {
   };
 
   const handleSelect = (country: Country) => {
+    isSelectingRef.current = true;
+
     setSelectedCountry(country);
     setInputValue(country.name?.common || "");
     setIsOpen(false);
     setSelectedIndex(-1);
+
+    setTimeout(() => {
+      isSelectingRef.current = false;
+    }, 100);
   };
 
   // Keyboard Navigation
@@ -93,10 +101,7 @@ export default function CountrySearch() {
   };
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full max-w-lg mx-auto relative p-4"
-    >
+    <div ref={containerRef} className="w-full max-w-lg mx-auto relative p-4">
       <label className="block text-sm font-semibold text-gray-700 mb-1">
         Search Country
       </label>
@@ -106,7 +111,11 @@ export default function CountrySearch() {
         isOpen={isOpen}
         isLoading={isLoading || isFetching}
         onChange={handleInputChange}
-        onFocus={() => setIsOpen(inputValue.trim().length > 0)}
+        onFocus={() => {
+          if (!isSelectingRef.current && inputValue.trim().length > 0) {
+            setIsOpen(true);
+          }
+        }}
         onKeyDown={handleKeyDown}
       />
 
@@ -123,6 +132,8 @@ export default function CountrySearch() {
           onRetry={refetch}
         />
       )}
+
+      {/* {selectedCountry && <SelectedCountryCard country={selectedCountry} />} */}
     </div>
   );
 }

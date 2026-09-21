@@ -1,3 +1,4 @@
+import React from "react";
 import { Country } from "@/types/country";
 
 interface CountryDropdownProps {
@@ -60,7 +61,10 @@ export function CountryDropdown({
               key={country.cca2 || idx}
               role="option"
               aria-selected={isSelected}
-              onClick={() => onSelect(country)}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onSelect(country);
+              }}
               onMouseEnter={() => onHoverItem(idx)}
               className={`px-4 py-3 cursor-pointer text-sm flex items-center justify-between border-b last:border-b-0 border-gray-100 ${
                 isSelected

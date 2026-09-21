@@ -1,22 +1,14 @@
-export interface CountryApiObject {
-  names: {
-    common: string;
-    official: string;
-  };
-  codes: {
-    alpha_2: string;
-    alpha_3: string;
-  };
-  capitals?: Array<{
-    name: string;
-  }>;
-  flag?: {
-    url_png?: string;
-    url_svg?: string;
-    description?: string;
-  };
-  population?: number;
-  region?: string;
+export interface CountriesNowItem {
+  iso2: string;
+  iso3: string;
+  country: string;
+  cities: string[];
+}
+
+export interface CountriesNowResponse {
+  error: boolean;
+  msg: string;
+  data: CountriesNowItem[];
 }
 
 export interface Country {

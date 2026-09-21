@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Country, CountryApiObject } from "@/types/country";
+import { Country, CountriesNowResponse } from "@/types/country";
 import { useDebounce } from "./useDebounce";
 
 export async function fetchCountries(
@@ -9,62 +9,62 @@ export async function fetchCountries(
   const trimmedQuery = query.trim();
   if (!trimmedQuery) return [];
 
-  const apiKey = process.env.NEXT_PUBLIC_REST_COUNTRIES_API_KEY;
-
-  const url = `https://api.restcountries.com/countries/v5?q=${encodeURIComponent(trimmedQuery)}`;
+  const url = "https://countriesnow.space/api/v0.1/countries";
 
   const response = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${apiKey}`,
       Accept: "application/json",
     },
     signal,
   });
 
   if (!response.ok) {
-    if (response.status === 404) return [];
     throw new Error(
       `API Error (${response.status}): ${response.statusText || "Failed to fetch"}`,
     );
   }
 
-  const json = await response.json();
-  const rawList: CountryApiObject[] =
-    json?.data?.objects || (Array.isArray(json) ? json : []);
+  const json: CountriesNowResponse = await response.json();
 
-  
-  // Filters out substring matches (e.g., excludes "Mexico" when query is "c")
+  if (json.error || !Array.isArray(json.data)) {
+    throw new Error(json.msg || "Failed to load countries");
+  }
+
   const normalizedQuery = trimmedQuery.toLowerCase();
 
-  const matchedCountries = rawList.filter((item) => {
-    const commonName = item.names?.common?.trim().toLowerCase() || "";
-    const officialName = item.names?.official?.trim().toLowerCase() || "";
+  // Filter countries as the user types
+  const matchedCountries = json.data.filter((item) => {
+    const countryName = item.country?.trim().toLowerCase() || "";
 
-    const startsWithCommon = commonName.startsWith(normalizedQuery);
-    const startsWithOfficial = officialName.startsWith(normalizedQuery);
+    // Exact prefix match 
+    const startsWithCountry = countryName.startsWith(normalizedQuery);
 
-    const wordMatch = commonName
+    // Word start match
+    const wordMatch = countryName
       .split(/\s+/)
       .some((word) => word.startsWith(normalizedQuery));
 
-    return startsWithCommon || startsWithOfficial || wordMatch;
+    return startsWithCountry || wordMatch;
   });
 
-  // Map the strictly filtered results to your UI structure
+  // Map the API output to match your UI's Country type format
   return matchedCountries.map((item) => ({
     name: {
-      common: item.names?.common?.trim() || "",
-      official: item.names?.official?.trim() || "",
+      common: item.country,
+      official: item.country,
     },
-    cca2: item.codes?.alpha_2?.trim() || "",
-    capital: item.capitals?.map((c) => c.name?.trim()) || [],
+    cca2: item.iso2 || "",
+    capital: item.cities && item.cities.length > 0 ? [item.cities[0]] : [],
     flags: {
-      png: item.flag?.url_png,
-      svg: item.flag?.url_svg,
-      alt: item.flag?.description,
+      // Free SVG flag 
+      svg: item.iso2
+        ? `https://flagcdn.com/${item.iso2.toLowerCase()}.svg`
+        : undefined,
+      png: item.iso2
+        ? `https://flagcdn.com/w320/${item.iso2.toLowerCase()}.png`
+        : undefined,
+      alt: `Flag of ${item.country}`,
     },
-    population: item.population,
-    region: item.region,
   }));
 }
 
